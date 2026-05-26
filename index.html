@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sundai ID Week Viewer</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#d8deea;--accent:#1f4fd8;--ok:#067647;--ng:#b42318}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#eef2ff,#f6f7fb 280px);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{width:min(1180px,calc(100% - 28px));margin:auto;padding:26px 0 44px}h1{margin:0 0 8px;font-size:clamp(24px,4vw,38px);letter-spacing:-.04em}p{line-height:1.65}.lead,.hint,.sub{color:var(--muted)}.grid{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}.card{background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 45px rgba(17,24,39,.09)}.controls{position:sticky;top:14px;padding:18px}.panel{padding:18px;margin-top:18px}.viewer{overflow:hidden}.viewer-head{padding:16px 18px;border-bottom:1px solid var(--line);background:#f9fafc}.title{margin:0 0 12px;font-size:17px}.field{margin-bottom:14px}label{display:block;margin-bottom:6px;font-size:13px;font-weight:800;color:#374151}select,input,textarea,button{font:inherit}select,input,textarea{width:100%;border:1px solid #b9c2d3;border-radius:12px;background:#fff;color:var(--text);padding:11px 12px;outline:none}select:focus,input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(31,79,216,.12)}textarea{min-height:150px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.55}.hint{margin:6px 0 0;font-size:12px}.status{display:grid;gap:8px;margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:13px;background:#f9fafc}.row{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:13px}.row strong{color:var(--text);text-align:right;overflow-wrap:anywhere}.buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}button,.linkbtn{border:0;border-radius:12px;padding:11px 14px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:42px}button.secondary,.linkbtn.secondary{background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}button:disabled{opacity:.45;cursor:not-allowed}.msg{min-height:22px;margin:10px 0 0;font-size:13px;font-weight:800}.ok{color:var(--ok)}.ng{color:var(--ng)}code{background:#eef2ff;border-radius:8px;padding:2px 5px;overflow-wrap:anywhere}iframe{display:block;width:100%;height:min(72vh,760px);min-height:520px;border:0;background:white}.headrow{display:flex;justify-content:space-between;align-items:center;gap:12px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#f3f6fb;font-size:12px;color:#4b5563}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.empty{padding:16px;text-align:center;color:var(--muted)}@media(max-width:880px){.grid{grid-template-columns:1fr}.controls{position:static}iframe{height:64vh;min-height:420px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header><h1>Sundai ID Week Viewer</h1><p class="lead">第1週IDと週番号から表示対象IDを計算し、iframeで開きます。名前は第1週IDに紐づけてlocalStorageへ保存します。</p></header>
+<div class="grid">
+<aside class="card controls">
+<h2 class="title">選択</h2>
+<div class="field"><label for="baseId">第1週ID</label><select id="baseId"></select><p class="hint">1516278 から 1523022 まで、24ずつ進むIDを表示します。</p></div>
+<div class="field"><label for="week">週番号</label><select id="week"></select><p class="hint">計算式: 第1週ID + (週番号 - 1) × 2</p></div>
+<div class="status" aria-live="polite"><div class="row"><span>登録名</span><strong id="curName">未登録</strong></div><div class="row"><span>第1週ID</span><strong id="curBase">-</strong></div><div class="row"><span>計算後ID</span><strong id="curActual">-</strong></div><div class="row"><span>週</span><strong id="curWeek">-</strong></div></div>
+<div class="buttons"><a id="openUrl" class="linkbtn secondary" href="#" target="_blank" rel="noopener noreferrer">新しいタブで開く</a><button id="copyId" class="secondary" type="button">現在のIDをコピー</button></div><p id="sideMsg" class="msg" role="status"></p>
+</aside>
+<section>
+<section class="card viewer"><div class="viewer-head"><h2 class="title">iframe</h2><p class="sub">URL: <code id="urlText">-</code></p></div><iframe id="frame" title="選択したIDの表示ページ"></iframe></section>
+<section class="card panel"><h2 class="title">名前登録</h2><div class="field"><label for="nameInput">選択中の第1週IDに紐づける名前</label><input id="nameInput" type="text" autocomplete="off" placeholder="例: 山田太郎"><p class="hint">空欄で保存すると、この第1週IDの登録名を削除します。</p></div><button id="saveName" type="button">名前を保存</button><p id="nameMsg" class="msg" role="status"></p></section>
+<section class="card panel"><div class="headrow"><div><h2 class="title">登録済みID・名前一覧</h2><p id="count" class="sub">0件</p></div><button id="copyAll" type="button">一覧をコピー</button></div><div class="field"><label for="copyArea">コピー内容</label><textarea id="copyArea" readonly placeholder="登録済みのIDと名前がここに表示されます。"></textarea></div><div id="table" class="tablewrap"></div><p id="copyMsg" class="msg" role="status"></p></section>
+</section>
+</div>
+</main>
+<script>
+(() => {
+'use strict';
+const C={key:'sundai-id-name-records-v1',start:1516278,end:1523022,baseStep:24,weeks:11,weekStep:2,prefix:'https://players.streaks.jp/prod-sundai/634f85d3a7674636bd1212b5904b1d81/index.html?m=ref:'};
+const $=id=>document.getElementById(id);
+const el={base:$('baseId'),week:$('week'),curName:$('curName'),curBase:$('curBase'),curActual:$('curActual'),curWeek:$('curWeek'),openUrl:$('openUrl'),copyId:$('copyId'),sideMsg:$('sideMsg'),urlText:$('urlText'),frame:$('frame'),nameInput:$('nameInput'),saveName:$('saveName'),nameMsg:$('nameMsg'),count:$('count'),copyAll:$('copyAll'),copyArea:$('copyArea'),table:$('table'),copyMsg:$('copyMsg')};
+let records={};
+let storageOk=true;
+function baseIds(){const a=[];for(let id=C.start;id<=C.end;id+=C.baseStep)a.push(id);return a}
+function validBaseSet(){return new Set(baseIds().map(String))}
+function msg(node,text,type){node.textContent=text||'';node.classList.remove('ok','ng');if(type)node.classList.add(type)}
+function canStore(){try{localStorage.setItem(C.key+':test','1');localStorage.removeItem(C.key+':test');return true}catch(_){return false}}
+function normalize(data){const out={},valid=validBaseSet();if(!data||typeof data!=='object')return out;for(const [id,v] of Object.entries(data)){if(!valid.has(id))continue;const name=typeof v==='string'?v.trim():String((v&&v.name)||'').trim();if(name)out[id]={name,updatedAt:typeof v.updatedAt==='string'?v.updatedAt:''}}return out}
+function load(){storageOk=canStore();if(!storageOk){msg(el.nameMsg,'localStorageを使用できません。リロード後の保存は保証されません。','ng');return {}}try{return normalize(JSON.parse(localStorage.getItem(C.key)||'{}'))}catch(_){msg(el.nameMsg,'保存データの読み込みに失敗しました。','ng');return {}}}
+function persist(){if(!storageOk)return false;try{localStorage.setItem(C.key,JSON.stringify(records));return true}catch(_){msg(el.nameMsg,'localStorageへの保存に失敗しました。','ng');return false}}
+function nameOf(id){return records[String(id)]?.name||''}
+function actualId(base,week){return base+(week-1)*C.weekStep}
+function targetUrl(id){return C.prefix+id}
+function selectedBase(){return Number(el.base.value)}
+function selectedWeek(){return Number(el.week.value)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function fmtDate(s){const d=new Date(s);return s&&!Number.isNaN(d.getTime())?d.toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'-'}
+function entries(){return Object.entries(records).map(([baseId,r])=>({baseId:Number(baseId),name:r.name,updatedAt:r.updatedAt})).sort((a,b)=>a.baseId-b.baseId)}
+function copyTextBody(){return entries().map(e=>`${e.baseId} ${e.name}`).join('\n')}
+function renderBaseSelect(keep){const current=keep||selectedBase()||C.start;el.base.textContent='';for(const id of baseIds()){const o=document.createElement('option');const n=nameOf(id);o.value=String(id);o.textContent=n?`${id} / ${n}`:String(id);el.base.appendChild(o)}el.base.value=String(current)}
+function renderWeeks(){for(let w=1;w<=C.weeks;w++){const o=document.createElement('option');o.value=String(w);o.textContent=`第${w}週`;el.week.appendChild(o)}}
+function renderList(){const list=entries(),body=copyTextBody();el.copyArea.value=body;el.count.textContent=`${list.length}件`;el.copyAll.disabled=list.length===0;if(!list.length){el.table.innerHTML='<div class="empty">登録済みの名前はまだありません。</div>';return}el.table.innerHTML=`<table><thead><tr><th>第1週ID</th><th>名前</th><th>更新日時</th></tr></thead><tbody>${list.map(e=>`<tr><td class="mono">${e.baseId}</td><td>${esc(e.name)}</td><td>${esc(fmtDate(e.updatedAt))}</td></tr>`).join('')}</tbody></table>`}
+function updateView(){const base=selectedBase(),week=selectedWeek(),actual=actualId(base,week),url=targetUrl(actual),name=nameOf(base);el.curBase.textContent=String(base);el.curWeek.textContent=`第${week}週`;el.curActual.textContent=String(actual);el.curName.textContent=name||'未登録';el.nameInput.value=name;el.urlText.textContent=url;el.openUrl.href=url;if(el.frame.getAttribute('src')!==url)el.frame.src=url}
+function saveName(){const base=selectedBase(),name=el.nameInput.value.trim();if(name)records[String(base)]={name,updatedAt:new Date().toISOString()};else delete records[String(base)];const ok=persist();renderBaseSelect(base);updateView();renderList();if(ok)msg(el.nameMsg,name?`${base} に「${name}」を保存しました。`:`${base} の登録名を削除しました。`,'ok');else msg(el.nameMsg,'一時的に反映しましたが、ブラウザ保存には失敗しました。','ng')}
+async function copyText(text){if(!text)throw new Error('コピーする内容がありません。');if(navigator.clipboard&&window.isSecureContext){try{await navigator.clipboard.writeText(text);return}catch(_){}}const t=document.createElement('textarea');t.value=text;t.readOnly=true;t.style.position='fixed';t.style.top='-1000px';t.style.left='-1000px';t.style.opacity='0';t.style.fontSize='16px';document.body.appendChild(t);t.focus();t.select();t.setSelectionRange(0,t.value.length);const ok=document.execCommand('copy');document.body.removeChild(t);if(!ok)throw new Error('コピーに失敗しました。textarea内の内容を手動でコピーしてください。')}
+async function copyAll(){try{await copyText(copyTextBody());msg(el.copyMsg,'登録済み一覧をコピーしました。','ok')}catch(e){el.copyArea.focus();el.copyArea.select();msg(el.copyMsg,e.message,'ng')}}
+async function copyCurrent(){const id=String(actualId(selectedBase(),selectedWeek()));try{await copyText(id);msg(el.sideMsg,`現在のID ${id} をコピーしました。`,'ok')}catch(e){msg(el.sideMsg,e.message,'ng')}}
+function bind(){el.base.addEventListener('change',()=>{msg(el.sideMsg,'');msg(el.nameMsg,'');updateView()});el.week.addEventListener('change',()=>{msg(el.sideMsg,'');updateView()});el.saveName.addEventListener('click',saveName);el.nameInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveName()}});el.copyAll.addEventListener('click',copyAll);el.copyId.addEventListener('click',copyCurrent)}
+records=load();renderWeeks();renderBaseSelect(C.start);renderList();updateView();bind();
+})();
+</script>
+</body>
+</html>

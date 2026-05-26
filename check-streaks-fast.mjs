@@ -11,6 +11,7 @@ if (urls.length === 0) {
 const TIMEOUT_MS = Number(process.env.TIMEOUT_MS || 5000);
 const CONCURRENCY = Number(process.env.CONCURRENCY || 3);
 const RESULT_FILE = process.env.RESULT_FILE || "result.txt";
+const RESULT_FALSE_FILE = process.env.RESULT_FALSE_FILE || "result-false.txt";
 const DEBUG = process.env.DEBUG === "1";
 
 const ERROR_RE =
@@ -21,7 +22,8 @@ function compact(s, n = 180) {
 }
 
 async function writeResult(url, exists) {
-  await appendFile(RESULT_FILE, `${url} ${exists ? "true" : "false"}\n`, "utf8");
+  const file = exists ? RESULT_FILE : RESULT_FALSE_FILE;
+  await appendFile(file, `${url}\n`, "utf8");
 }
 
 async function getDomSignals(page) {

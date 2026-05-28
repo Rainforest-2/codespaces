@@ -1,65 +1,737 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sundai ID Week Viewer</title>
-<style>
-:root{--bg:#f6f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#d8deea;--accent:#1f4fd8;--ok:#067647;--ng:#b42318}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#eef2ff,#f6f7fb 280px);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{width:min(1180px,calc(100% - 28px));margin:auto;padding:26px 0 44px}h1{margin:0 0 8px;font-size:clamp(24px,4vw,38px);letter-spacing:-.04em}p{line-height:1.65}.lead,.hint,.sub{color:var(--muted)}.grid{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}.card{background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 45px rgba(17,24,39,.09)}.controls{position:sticky;top:14px;padding:18px}.panel{padding:18px;margin-top:18px}.viewer{overflow:hidden}.viewer-head{padding:16px 18px;border-bottom:1px solid var(--line);background:#f9fafc}.title{margin:0 0 12px;font-size:17px}.field{margin-bottom:14px}label{display:block;margin-bottom:6px;font-size:13px;font-weight:800;color:#374151}select,input,textarea,button{font:inherit}select,input,textarea{width:100%;border:1px solid #b9c2d3;border-radius:12px;background:#fff;color:var(--text);padding:11px 12px;outline:none}select:focus,input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(31,79,216,.12)}textarea{min-height:150px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.55}.hint{margin:6px 0 0;font-size:12px}.status{display:grid;gap:8px;margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:13px;background:#f9fafc}.row{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:13px}.row strong{color:var(--text);text-align:right;overflow-wrap:anywhere}.buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}button,.linkbtn{border:0;border-radius:12px;padding:11px 14px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:42px}button.secondary,.linkbtn.secondary{background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}button:disabled{opacity:.45;cursor:not-allowed}.msg{min-height:22px;margin:10px 0 0;font-size:13px;font-weight:800}.ok{color:var(--ok)}.ng{color:var(--ng)}code{background:#eef2ff;border-radius:8px;padding:2px 5px;overflow-wrap:anywhere}iframe{display:block;width:100%;height:min(72vh,760px);min-height:520px;border:0;background:white}.headrow{display:flex;justify-content:space-between;align-items:center;gap:12px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#f3f6fb;font-size:12px;color:#4b5563}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.empty{padding:16px;text-align:center;color:var(--muted)}@media(max-width:880px){.grid{grid-template-columns:1fr}.controls{position:static}iframe{height:64vh;min-height:420px}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sundai ID Week / Ref Viewer</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --line: #d8deea;
+      --accent: #1f4fd8;
+      --accent-soft: #eef2ff;
+      --ok: #067647;
+      --ng: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #eef2ff, var(--bg) 300px);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .wrap { width: min(1180px, calc(100% - 28px)); margin: auto; padding: 26px 0 44px; }
+    h1 { margin: 0 0 8px; font-size: clamp(24px, 4vw, 38px); letter-spacing: -.04em; }
+    p { line-height: 1.65; }
+    .lead, .hint, .sub { color: var(--muted); }
+    .tabs { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+    .tab-button {
+      border: 1px solid #c7d2fe;
+      border-radius: 999px;
+      padding: 11px 16px;
+      background: #fff;
+      color: #1e3a8a;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .tab-button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tab-panel[hidden] { display: none; }
+    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 18px; align-items: start; }
+    .card {
+      background: rgba(255, 255, 255, .96);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 18px 45px rgba(17, 24, 39, .09);
+    }
+    .controls { position: sticky; top: 14px; padding: 18px; }
+    .panel { padding: 18px; margin-top: 18px; }
+    .viewer { overflow: hidden; }
+    .viewer-head { padding: 16px 18px; border-bottom: 1px solid var(--line); background: #f9fafc; }
+    .title { margin: 0 0 12px; font-size: 17px; }
+    .field { margin-bottom: 14px; }
+    label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 800; color: #374151; }
+    select, input, textarea, button { font: inherit; }
+    select, input, textarea {
+      width: 100%;
+      border: 1px solid #b9c2d3;
+      border-radius: 12px;
+      background: #fff;
+      color: var(--text);
+      padding: 11px 12px;
+      outline: none;
+    }
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(31, 79, 216, .12);
+    }
+    textarea { min-height: 150px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.55; }
+    .hint { margin: 6px 0 0; font-size: 12px; }
+    .status { display: grid; gap: 8px; margin: 14px 0; padding: 12px; border: 1px solid var(--line); border-radius: 13px; background: #f9fafc; }
+    .row { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; }
+    .row strong { color: var(--text); text-align: right; overflow-wrap: anywhere; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .step-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+    button, .linkbtn {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+    }
+    button.secondary, .linkbtn.secondary { background: var(--accent-soft); color: #1e3a8a; border: 1px solid #c7d2fe; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .msg { min-height: 22px; margin: 10px 0 0; font-size: 13px; font-weight: 800; }
+    .ok { color: var(--ok); }
+    .ng { color: var(--ng); }
+    code { background: var(--accent-soft); border-radius: 8px; padding: 2px 5px; overflow-wrap: anywhere; }
+    iframe { display: block; width: 100%; height: min(72vh, 760px); min-height: 520px; border: 0; background: white; }
+    .headrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .tablewrap { overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #f3f6fb; font-size: 12px; color: #4b5563; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .empty { padding: 16px; text-align: center; color: var(--muted); }
+    @media (max-width: 880px) {
+      .grid { grid-template-columns: 1fr; }
+      .controls { position: static; }
+      iframe { height: 64vh; min-height: 420px; }
+      .step-buttons { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
 </head>
 <body>
 <main class="wrap">
-<header><h1>Sundai ID Week Viewer</h1><p class="lead">第1週IDと週番号から表示対象IDを計算し、iframeで開きます。名前は第1週IDに紐づけてlocalStorageへ保存します。</p></header>
-<div class="grid">
-<aside class="card controls">
-<h2 class="title">選択</h2>
-<div class="field"><label for="baseId">第1週ID</label><select id="baseId"></select><p class="hint">1516278 から 1523022 まで、24ずつ進むIDを表示します。</p></div>
-<div class="field"><label for="week">週番号</label><select id="week"></select><p class="hint">計算式: 第1週ID + (週番号 - 1) × 2</p></div>
-<div class="status" aria-live="polite"><div class="row"><span>登録名</span><strong id="curName">未登録</strong></div><div class="row"><span>第1週ID</span><strong id="curBase">-</strong></div><div class="row"><span>計算後ID</span><strong id="curActual">-</strong></div><div class="row"><span>週</span><strong id="curWeek">-</strong></div></div>
-<div class="buttons"><a id="openUrl" class="linkbtn secondary" href="#" target="_blank" rel="noopener noreferrer">新しいタブで開く</a><button id="copyId" class="secondary" type="button">現在のIDをコピー</button></div><p id="sideMsg" class="msg" role="status"></p>
-</aside>
-<section>
-<section class="card viewer"><div class="viewer-head"><h2 class="title">iframe</h2><p class="sub">URL: <code id="urlText">-</code></p></div><iframe id="frame" title="選択したIDの表示ページ"></iframe></section>
-<section class="card panel"><h2 class="title">名前登録</h2><div class="field"><label for="nameInput">選択中の第1週IDに紐づける名前</label><input id="nameInput" type="text" autocomplete="off" placeholder="例: 山田太郎"><p class="hint">空欄で保存すると、この第1週IDの登録名を削除します。</p></div><button id="saveName" type="button">名前を保存</button><p id="nameMsg" class="msg" role="status"></p></section>
-<section class="card panel"><div class="headrow"><div><h2 class="title">登録済みID・名前一覧</h2><p id="count" class="sub">0件</p></div><button id="copyAll" type="button">一覧をコピー</button></div><div class="field"><label for="copyArea">コピー内容</label><textarea id="copyArea" readonly placeholder="登録済みのIDと名前がここに表示されます。"></textarea></div><div id="table" class="tablewrap"></div><p id="copyMsg" class="msg" role="status"></p></section>
-</section>
-</div>
+  <header>
+    <h1>Sundai ID Week / Ref Viewer</h1>
+    <p class="lead">週選択モードとref直接入力モードをタブで切り替えます。名前はブラウザに保存され、リロード後も残ります。</p>
+  </header>
+
+  <nav class="tabs" aria-label="表示モード">
+    <button class="tab-button active" type="button" data-tab="weekly">1ページ目: 週選択モード</button>
+    <button class="tab-button" type="button" data-tab="direct">2ページ目: ref直接入力モード</button>
+  </nav>
+
+  <section id="weeklyPanel" class="tab-panel">
+    <div class="grid">
+      <aside class="card controls">
+        <h2 class="title">週選択</h2>
+        <div class="field">
+          <label for="weeklyBaseId">第1週ID</label>
+          <select id="weeklyBaseId"></select>
+          <p class="hint">1516278 から 1523022 まで、24ずつ進むIDを表示します。</p>
+        </div>
+        <div class="field">
+          <label for="weeklyWeek">週番号</label>
+          <select id="weeklyWeek"></select>
+          <p class="hint">計算式: 第1週ID + (週番号 - 1) × 2</p>
+        </div>
+        <div class="status" aria-live="polite">
+          <div class="row"><span>登録名</span><strong id="weeklyCurrentName">未登録</strong></div>
+          <div class="row"><span>第1週ID</span><strong id="weeklyCurrentBase">-</strong></div>
+          <div class="row"><span>計算後ID</span><strong id="weeklyCurrentActual">-</strong></div>
+          <div class="row"><span>週</span><strong id="weeklyCurrentWeek">-</strong></div>
+        </div>
+        <div class="buttons">
+          <a id="weeklyOpenUrl" class="linkbtn secondary" href="#" target="_blank" rel="noopener noreferrer">新しいタブで開く</a>
+          <button id="weeklyCopyCurrent" class="secondary" type="button">現在のIDをコピー</button>
+        </div>
+        <p id="weeklySideMsg" class="msg" role="status"></p>
+      </aside>
+
+      <section>
+        <section class="card viewer">
+          <div class="viewer-head">
+            <h2 class="title">iframe</h2>
+            <p class="sub">URL: <code id="weeklyUrlText">-</code></p>
+          </div>
+          <iframe id="weeklyFrame" title="週選択モードの表示ページ"></iframe>
+        </section>
+
+        <section class="card panel">
+          <h2 class="title">名前登録</h2>
+          <div class="field">
+            <label for="weeklyNameInput">選択中の第1週IDに紐づける名前</label>
+            <input id="weeklyNameInput" type="text" autocomplete="off" placeholder="例: 山田太郎">
+            <p class="hint">空欄で保存すると、この第1週IDの登録名を削除します。</p>
+          </div>
+          <button id="weeklySaveName" type="button">名前を保存</button>
+          <p id="weeklyNameMsg" class="msg" role="status"></p>
+        </section>
+
+        <section class="card panel">
+          <div class="headrow">
+            <div>
+              <h2 class="title">登録済み 第1週ID・名前一覧</h2>
+              <p id="weeklyCount" class="sub">0件</p>
+            </div>
+            <button id="weeklyCopyAll" type="button">一覧をコピー</button>
+          </div>
+          <div class="field">
+            <label for="weeklyCopyArea">コピー内容</label>
+            <textarea id="weeklyCopyArea" readonly placeholder="登録済みのIDと名前がここに表示されます。"></textarea>
+          </div>
+          <div id="weeklyTable" class="tablewrap"></div>
+          <p id="weeklyCopyMsg" class="msg" role="status"></p>
+        </section>
+      </section>
+    </div>
+  </section>
+
+  <section id="directPanel" class="tab-panel" hidden>
+    <div class="grid">
+      <aside class="card controls">
+        <h2 class="title">ref直接入力</h2>
+        <div class="field">
+          <label for="directRefInput">ref ID</label>
+          <input id="directRefInput" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="例: 1521006">
+          <p class="hint">数字のみ入力できます。表示ボタンまたは増減ボタンでiframeを更新します。</p>
+        </div>
+        <button id="directApply" type="button">このrefで表示</button>
+        <div class="step-buttons" aria-label="ref ID増減ボタン">
+          <button class="secondary" type="button" data-delta="-1000">-1000</button>
+          <button class="secondary" type="button" data-delta="-100">-100</button>
+          <button class="secondary" type="button" data-delta="-24">-24</button>
+          <button class="secondary" type="button" data-delta="24">+24</button>
+          <button class="secondary" type="button" data-delta="100">+100</button>
+          <button class="secondary" type="button" data-delta="1000">+1000</button>
+        </div>
+        <div class="status" aria-live="polite">
+          <div class="row"><span>登録名</span><strong id="directCurrentName">未登録</strong></div>
+          <div class="row"><span>現在のref ID</span><strong id="directCurrentId">-</strong></div>
+        </div>
+        <div class="buttons">
+          <a id="directOpenUrl" class="linkbtn secondary" href="#" target="_blank" rel="noopener noreferrer">新しいタブで開く</a>
+          <button id="directCopyCurrent" class="secondary" type="button">現在のrefをコピー</button>
+        </div>
+        <p id="directSideMsg" class="msg" role="status"></p>
+      </aside>
+
+      <section>
+        <section class="card viewer">
+          <div class="viewer-head">
+            <h2 class="title">iframe</h2>
+            <p class="sub">URL: <code id="directUrlText">未表示</code></p>
+          </div>
+          <iframe id="directFrame" title="ref直接入力モードの表示ページ"></iframe>
+        </section>
+
+        <section class="card panel">
+          <h2 class="title">名前登録</h2>
+          <div class="field">
+            <label for="directNameInput">現在のref IDに紐づける名前</label>
+            <input id="directNameInput" type="text" autocomplete="off" placeholder="例: 山田太郎">
+            <p class="hint">空欄で保存すると、このref IDの登録名を削除します。</p>
+          </div>
+          <button id="directSaveName" type="button">名前を保存</button>
+          <p id="directNameMsg" class="msg" role="status"></p>
+        </section>
+
+        <section class="card panel">
+          <div class="headrow">
+            <div>
+              <h2 class="title">登録済み ref ID・名前一覧</h2>
+              <p id="directCount" class="sub">0件</p>
+            </div>
+            <button id="directCopyAll" type="button">一覧をコピー</button>
+          </div>
+          <div class="field">
+            <label for="directCopyArea">コピー内容</label>
+            <textarea id="directCopyArea" readonly placeholder="登録済みのref IDと名前がここに表示されます。"></textarea>
+          </div>
+          <div id="directTable" class="tablewrap"></div>
+          <p id="directCopyMsg" class="msg" role="status"></p>
+        </section>
+      </section>
+    </div>
+  </section>
 </main>
+
 <script>
 (() => {
-'use strict';
-const C={key:'sundai-id-name-records-v1',start:1516278,end:1523022,baseStep:24,weeks:11,weekStep:2,prefix:'https://players.streaks.jp/prod-sundai/634f85d3a7674636bd1212b5904b1d81/index.html?m=ref:'};
-const $=id=>document.getElementById(id);
-const el={base:$('baseId'),week:$('week'),curName:$('curName'),curBase:$('curBase'),curActual:$('curActual'),curWeek:$('curWeek'),openUrl:$('openUrl'),copyId:$('copyId'),sideMsg:$('sideMsg'),urlText:$('urlText'),frame:$('frame'),nameInput:$('nameInput'),saveName:$('saveName'),nameMsg:$('nameMsg'),count:$('count'),copyAll:$('copyAll'),copyArea:$('copyArea'),table:$('table'),copyMsg:$('copyMsg')};
-let records={};
-let storageOk=true;
-function baseIds(){const a=[];for(let id=C.start;id<=C.end;id+=C.baseStep)a.push(id);return a}
-function validBaseSet(){return new Set(baseIds().map(String))}
-function msg(node,text,type){node.textContent=text||'';node.classList.remove('ok','ng');if(type)node.classList.add(type)}
-function canStore(){try{localStorage.setItem(C.key+':test','1');localStorage.removeItem(C.key+':test');return true}catch(_){return false}}
-function normalize(data){const out={},valid=validBaseSet();if(!data||typeof data!=='object')return out;for(const [id,v] of Object.entries(data)){if(!valid.has(id))continue;const name=typeof v==='string'?v.trim():String((v&&v.name)||'').trim();if(name)out[id]={name,updatedAt:typeof v.updatedAt==='string'?v.updatedAt:''}}return out}
-function load(){storageOk=canStore();if(!storageOk){msg(el.nameMsg,'localStorageを使用できません。リロード後の保存は保証されません。','ng');return {}}try{return normalize(JSON.parse(localStorage.getItem(C.key)||'{}'))}catch(_){msg(el.nameMsg,'保存データの読み込みに失敗しました。','ng');return {}}}
-function persist(){if(!storageOk)return false;try{localStorage.setItem(C.key,JSON.stringify(records));return true}catch(_){msg(el.nameMsg,'localStorageへの保存に失敗しました。','ng');return false}}
-function nameOf(id){return records[String(id)]?.name||''}
-function actualId(base,week){return base+(week-1)*C.weekStep}
-function targetUrl(id){return C.prefix+id}
-function selectedBase(){return Number(el.base.value)}
-function selectedWeek(){return Number(el.week.value)}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
-function fmtDate(s){const d=new Date(s);return s&&!Number.isNaN(d.getTime())?d.toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'-'}
-function entries(){return Object.entries(records).map(([baseId,r])=>({baseId:Number(baseId),name:r.name,updatedAt:r.updatedAt})).sort((a,b)=>a.baseId-b.baseId)}
-function copyTextBody(){return entries().map(e=>`${e.baseId} ${e.name}`).join('\n')}
-function renderBaseSelect(keep){const current=keep||selectedBase()||C.start;el.base.textContent='';for(const id of baseIds()){const o=document.createElement('option');const n=nameOf(id);o.value=String(id);o.textContent=n?`${id} / ${n}`:String(id);el.base.appendChild(o)}el.base.value=String(current)}
-function renderWeeks(){for(let w=1;w<=C.weeks;w++){const o=document.createElement('option');o.value=String(w);o.textContent=`第${w}週`;el.week.appendChild(o)}}
-function renderList(){const list=entries(),body=copyTextBody();el.copyArea.value=body;el.count.textContent=`${list.length}件`;el.copyAll.disabled=list.length===0;if(!list.length){el.table.innerHTML='<div class="empty">登録済みの名前はまだありません。</div>';return}el.table.innerHTML=`<table><thead><tr><th>第1週ID</th><th>名前</th><th>更新日時</th></tr></thead><tbody>${list.map(e=>`<tr><td class="mono">${e.baseId}</td><td>${esc(e.name)}</td><td>${esc(fmtDate(e.updatedAt))}</td></tr>`).join('')}</tbody></table>`}
-function updateView(){const base=selectedBase(),week=selectedWeek(),actual=actualId(base,week),url=targetUrl(actual),name=nameOf(base);el.curBase.textContent=String(base);el.curWeek.textContent=`第${week}週`;el.curActual.textContent=String(actual);el.curName.textContent=name||'未登録';el.nameInput.value=name;el.urlText.textContent=url;el.openUrl.href=url;if(el.frame.getAttribute('src')!==url)el.frame.src=url}
-function saveName(){const base=selectedBase(),name=el.nameInput.value.trim();if(name)records[String(base)]={name,updatedAt:new Date().toISOString()};else delete records[String(base)];const ok=persist();renderBaseSelect(base);updateView();renderList();if(ok)msg(el.nameMsg,name?`${base} に「${name}」を保存しました。`:`${base} の登録名を削除しました。`,'ok');else msg(el.nameMsg,'一時的に反映しましたが、ブラウザ保存には失敗しました。','ng')}
-async function copyText(text){if(!text)throw new Error('コピーする内容がありません。');if(navigator.clipboard&&window.isSecureContext){try{await navigator.clipboard.writeText(text);return}catch(_){}}const t=document.createElement('textarea');t.value=text;t.readOnly=true;t.style.position='fixed';t.style.top='-1000px';t.style.left='-1000px';t.style.opacity='0';t.style.fontSize='16px';document.body.appendChild(t);t.focus();t.select();t.setSelectionRange(0,t.value.length);const ok=document.execCommand('copy');document.body.removeChild(t);if(!ok)throw new Error('コピーに失敗しました。textarea内の内容を手動でコピーしてください。')}
-async function copyAll(){try{await copyText(copyTextBody());msg(el.copyMsg,'登録済み一覧をコピーしました。','ok')}catch(e){el.copyArea.focus();el.copyArea.select();msg(el.copyMsg,e.message,'ng')}}
-async function copyCurrent(){const id=String(actualId(selectedBase(),selectedWeek()));try{await copyText(id);msg(el.sideMsg,`現在のID ${id} をコピーしました。`,'ok')}catch(e){msg(el.sideMsg,e.message,'ng')}}
-function bind(){el.base.addEventListener('change',()=>{msg(el.sideMsg,'');msg(el.nameMsg,'');updateView()});el.week.addEventListener('change',()=>{msg(el.sideMsg,'');updateView()});el.saveName.addEventListener('click',saveName);el.nameInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveName()}});el.copyAll.addEventListener('click',copyAll);el.copyId.addEventListener('click',copyCurrent)}
-records=load();renderWeeks();renderBaseSelect(C.start);renderList();updateView();bind();
+  'use strict';
+
+  const CONFIG = {
+    storageKey: 'sundai-id-viewer-v2',
+    legacyWeeklyKey: 'sundai-id-name-records-v1',
+    start: 1516278,
+    end: 1523022,
+    baseStep: 24,
+    weeks: 11,
+    weekStep: 2,
+    urlPrefix: 'https://players.streaks.jp/prod-sundai/634f85d3a7674636bd1212b5904b1d81/index.html?m=ref:'
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const elements = {
+    tabButtons: Array.from(document.querySelectorAll('[data-tab]')),
+    weeklyPanel: $('weeklyPanel'),
+    directPanel: $('directPanel'),
+
+    weeklyBaseId: $('weeklyBaseId'),
+    weeklyWeek: $('weeklyWeek'),
+    weeklyCurrentName: $('weeklyCurrentName'),
+    weeklyCurrentBase: $('weeklyCurrentBase'),
+    weeklyCurrentActual: $('weeklyCurrentActual'),
+    weeklyCurrentWeek: $('weeklyCurrentWeek'),
+    weeklyOpenUrl: $('weeklyOpenUrl'),
+    weeklyCopyCurrent: $('weeklyCopyCurrent'),
+    weeklySideMsg: $('weeklySideMsg'),
+    weeklyUrlText: $('weeklyUrlText'),
+    weeklyFrame: $('weeklyFrame'),
+    weeklyNameInput: $('weeklyNameInput'),
+    weeklySaveName: $('weeklySaveName'),
+    weeklyNameMsg: $('weeklyNameMsg'),
+    weeklyCount: $('weeklyCount'),
+    weeklyCopyAll: $('weeklyCopyAll'),
+    weeklyCopyArea: $('weeklyCopyArea'),
+    weeklyTable: $('weeklyTable'),
+    weeklyCopyMsg: $('weeklyCopyMsg'),
+
+    directRefInput: $('directRefInput'),
+    directApply: $('directApply'),
+    directStepButtons: Array.from(document.querySelectorAll('[data-delta]')),
+    directCurrentName: $('directCurrentName'),
+    directCurrentId: $('directCurrentId'),
+    directOpenUrl: $('directOpenUrl'),
+    directCopyCurrent: $('directCopyCurrent'),
+    directSideMsg: $('directSideMsg'),
+    directUrlText: $('directUrlText'),
+    directFrame: $('directFrame'),
+    directNameInput: $('directNameInput'),
+    directSaveName: $('directSaveName'),
+    directNameMsg: $('directNameMsg'),
+    directCount: $('directCount'),
+    directCopyAll: $('directCopyAll'),
+    directCopyArea: $('directCopyArea'),
+    directTable: $('directTable'),
+    directCopyMsg: $('directCopyMsg')
+  };
+
+  let storageAvailable = true;
+  let data = {
+    weeklyRecords: {},
+    directRefRecords: {}
+  };
+  let directCurrentRefId = null;
+
+  function baseIds() {
+    const ids = [];
+    for (let id = CONFIG.start; id <= CONFIG.end; id += CONFIG.baseStep) ids.push(id);
+    return ids;
+  }
+
+  function validWeeklyBaseSet() {
+    return new Set(baseIds().map(String));
+  }
+
+  function setMessage(node, text, type) {
+    node.textContent = text || '';
+    node.classList.remove('ok', 'ng');
+    if (type) node.classList.add(type);
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    }[char]));
+  }
+
+  function formatDate(value) {
+    const date = new Date(value);
+    if (!value || Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleString('ja-JP', {
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  function canUseLocalStorage() {
+    try {
+      localStorage.setItem(CONFIG.storageKey + ':test', '1');
+      localStorage.removeItem(CONFIG.storageKey + ':test');
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function normalizeWeeklyRecords(raw) {
+    const normalized = {};
+    const valid = validWeeklyBaseSet();
+    if (!raw || typeof raw !== 'object') return normalized;
+    for (const [id, value] of Object.entries(raw)) {
+      if (!valid.has(id)) continue;
+      const name = typeof value === 'string' ? value.trim() : String((value && value.name) || '').trim();
+      if (name) normalized[id] = { name, updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : '' };
+    }
+    return normalized;
+  }
+
+  function normalizeDirectRecords(raw) {
+    const normalized = {};
+    if (!raw || typeof raw !== 'object') return normalized;
+    for (const [id, value] of Object.entries(raw)) {
+      if (!/^\d+$/.test(id)) continue;
+      const numericId = Number(id);
+      if (!Number.isSafeInteger(numericId) || numericId <= 0) continue;
+      const name = typeof value === 'string' ? value.trim() : String((value && value.name) || '').trim();
+      if (name) normalized[id] = { name, updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : '' };
+    }
+    return normalized;
+  }
+
+  function loadData() {
+    storageAvailable = canUseLocalStorage();
+    if (!storageAvailable) {
+      setMessage(elements.weeklyNameMsg, 'localStorageを使用できません。リロード後の保存は保証されません。', 'ng');
+      setMessage(elements.directNameMsg, 'localStorageを使用できません。リロード後の保存は保証されません。', 'ng');
+      return { weeklyRecords: {}, directRefRecords: {} };
+    }
+
+    try {
+      const next = JSON.parse(localStorage.getItem(CONFIG.storageKey) || '{}');
+      const legacyWeekly = JSON.parse(localStorage.getItem(CONFIG.legacyWeeklyKey) || '{}');
+      return {
+        weeklyRecords: normalizeWeeklyRecords(Object.keys(next.weeklyRecords || {}).length ? next.weeklyRecords : legacyWeekly),
+        directRefRecords: normalizeDirectRecords(next.directRefRecords)
+      };
+    } catch (_) {
+      setMessage(elements.weeklyNameMsg, '保存データの読み込みに失敗しました。', 'ng');
+      setMessage(elements.directNameMsg, '保存データの読み込みに失敗しました。', 'ng');
+      return { weeklyRecords: {}, directRefRecords: {} };
+    }
+  }
+
+  function persistData() {
+    if (!storageAvailable) return false;
+    try {
+      localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function targetUrl(refId) {
+    return CONFIG.urlPrefix + refId;
+  }
+
+  function copyTextBody(records) {
+    return Object.entries(records)
+      .map(([id, record]) => ({ id: Number(id), name: record.name }))
+      .sort((a, b) => a.id - b.id)
+      .map((entry) => `${entry.id} ${entry.name}`)
+      .join('\n');
+  }
+
+  async function copyText(text) {
+    if (!text) throw new Error('コピーする内容がありません。');
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return;
+      } catch (_) {}
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.readOnly = true;
+    textarea.style.position = 'fixed';
+    textarea.style.top = '-1000px';
+    textarea.style.left = '-1000px';
+    textarea.style.opacity = '0';
+    textarea.style.fontSize = '16px';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    if (!ok) throw new Error('コピーに失敗しました。textarea内の内容を手動でコピーしてください。');
+  }
+
+  function renderTable(target, records, emptyText) {
+    const entries = Object.entries(records)
+      .map(([id, record]) => ({ id: Number(id), name: record.name, updatedAt: record.updatedAt }))
+      .sort((a, b) => a.id - b.id);
+
+    if (!entries.length) {
+      target.innerHTML = `<div class="empty">${escapeHtml(emptyText)}</div>`;
+      return;
+    }
+
+    target.innerHTML = `<table><thead><tr><th>ID</th><th>名前</th><th>更新日時</th></tr></thead><tbody>${entries.map((entry) => `
+      <tr>
+        <td class="mono">${entry.id}</td>
+        <td>${escapeHtml(entry.name)}</td>
+        <td>${escapeHtml(formatDate(entry.updatedAt))}</td>
+      </tr>`).join('')}</tbody></table>`;
+  }
+
+  function renderWeeklyBaseSelect(keepValue) {
+    const current = keepValue || Number(elements.weeklyBaseId.value) || CONFIG.start;
+    elements.weeklyBaseId.textContent = '';
+    for (const id of baseIds()) {
+      const option = document.createElement('option');
+      const name = data.weeklyRecords[String(id)]?.name || '';
+      option.value = String(id);
+      option.textContent = name ? `${id} / ${name}` : String(id);
+      elements.weeklyBaseId.appendChild(option);
+    }
+    elements.weeklyBaseId.value = String(current);
+  }
+
+  function renderWeeklyWeekSelect() {
+    for (let week = 1; week <= CONFIG.weeks; week += 1) {
+      const option = document.createElement('option');
+      option.value = String(week);
+      option.textContent = `第${week}週`;
+      elements.weeklyWeek.appendChild(option);
+    }
+  }
+
+  function selectedWeeklyBaseId() {
+    return Number(elements.weeklyBaseId.value);
+  }
+
+  function selectedWeeklyWeek() {
+    return Number(elements.weeklyWeek.value);
+  }
+
+  function weeklyActualId(baseId, week) {
+    return baseId + (week - 1) * CONFIG.weekStep;
+  }
+
+  function updateWeeklyView() {
+    const baseId = selectedWeeklyBaseId();
+    const week = selectedWeeklyWeek();
+    const actualId = weeklyActualId(baseId, week);
+    const url = targetUrl(actualId);
+    const name = data.weeklyRecords[String(baseId)]?.name || '';
+
+    elements.weeklyCurrentName.textContent = name || '未登録';
+    elements.weeklyCurrentBase.textContent = String(baseId);
+    elements.weeklyCurrentActual.textContent = String(actualId);
+    elements.weeklyCurrentWeek.textContent = `第${week}週`;
+    elements.weeklyNameInput.value = name;
+    elements.weeklyUrlText.textContent = url;
+    elements.weeklyOpenUrl.href = url;
+    if (elements.weeklyFrame.getAttribute('src') !== url) elements.weeklyFrame.src = url;
+  }
+
+  function renderWeeklyList() {
+    const body = copyTextBody(data.weeklyRecords);
+    const count = Object.keys(data.weeklyRecords).length;
+    elements.weeklyCopyArea.value = body;
+    elements.weeklyCount.textContent = `${count}件`;
+    elements.weeklyCopyAll.disabled = count === 0;
+    renderTable(elements.weeklyTable, data.weeklyRecords, '登録済みの名前はまだありません。');
+  }
+
+  function saveWeeklyName() {
+    const baseId = selectedWeeklyBaseId();
+    const name = elements.weeklyNameInput.value.trim();
+    if (name) data.weeklyRecords[String(baseId)] = { name, updatedAt: new Date().toISOString() };
+    else delete data.weeklyRecords[String(baseId)];
+
+    const ok = persistData();
+    renderWeeklyBaseSelect(baseId);
+    updateWeeklyView();
+    renderWeeklyList();
+    setMessage(
+      elements.weeklyNameMsg,
+      ok ? (name ? `${baseId} に「${name}」を保存しました。` : `${baseId} の登録名を削除しました。`) : '一時的に反映しましたが、ブラウザ保存には失敗しました。',
+      ok ? 'ok' : 'ng'
+    );
+  }
+
+  function parseDirectInput() {
+    const raw = elements.directRefInput.value.trim();
+    if (!raw) throw new Error('ref IDを入力してください。');
+    if (!/^\d+$/.test(raw)) throw new Error('ref IDは数字のみで入力してください。');
+    const id = Number(raw);
+    if (!Number.isSafeInteger(id) || id <= 0) throw new Error('ref IDは1以上の安全な整数で入力してください。');
+    return id;
+  }
+
+  function setDirectRefId(refId) {
+    directCurrentRefId = refId;
+    elements.directRefInput.value = String(refId);
+    updateDirectView();
+  }
+
+  function updateDirectView() {
+    const hasId = Number.isSafeInteger(directCurrentRefId) && directCurrentRefId > 0;
+    const name = hasId ? (data.directRefRecords[String(directCurrentRefId)]?.name || '') : '';
+    const url = hasId ? targetUrl(directCurrentRefId) : '';
+
+    elements.directCurrentName.textContent = name || '未登録';
+    elements.directCurrentId.textContent = hasId ? String(directCurrentRefId) : '-';
+    elements.directNameInput.value = name;
+    elements.directUrlText.textContent = hasId ? url : '未表示';
+    elements.directOpenUrl.href = hasId ? url : '#';
+    elements.directCopyCurrent.disabled = !hasId;
+    elements.directSaveName.disabled = !hasId;
+    if (hasId && elements.directFrame.getAttribute('src') !== url) elements.directFrame.src = url;
+  }
+
+  function applyDirectRef() {
+    try {
+      const refId = parseDirectInput();
+      setDirectRefId(refId);
+      setMessage(elements.directSideMsg, `${refId} を表示しました。`, 'ok');
+    } catch (error) {
+      setMessage(elements.directSideMsg, error.message, 'ng');
+    }
+  }
+
+  function stepDirectRef(delta) {
+    try {
+      const current = parseDirectInput();
+      const next = current + delta;
+      if (!Number.isSafeInteger(next) || next <= 0) throw new Error('計算後のref IDが不正です。');
+      setDirectRefId(next);
+      setMessage(elements.directSideMsg, `${current} から ${next} に変更しました。`, 'ok');
+    } catch (error) {
+      setMessage(elements.directSideMsg, error.message, 'ng');
+    }
+  }
+
+  function renderDirectList() {
+    const body = copyTextBody(data.directRefRecords);
+    const count = Object.keys(data.directRefRecords).length;
+    elements.directCopyArea.value = body;
+    elements.directCount.textContent = `${count}件`;
+    elements.directCopyAll.disabled = count === 0;
+    renderTable(elements.directTable, data.directRefRecords, '登録済みのref IDはまだありません。');
+  }
+
+  function saveDirectName() {
+    if (!Number.isSafeInteger(directCurrentRefId) || directCurrentRefId <= 0) {
+      setMessage(elements.directNameMsg, '先に有効なref IDを表示してください。', 'ng');
+      return;
+    }
+
+    const name = elements.directNameInput.value.trim();
+    if (name) data.directRefRecords[String(directCurrentRefId)] = { name, updatedAt: new Date().toISOString() };
+    else delete data.directRefRecords[String(directCurrentRefId)];
+
+    const ok = persistData();
+    updateDirectView();
+    renderDirectList();
+    setMessage(
+      elements.directNameMsg,
+      ok ? (name ? `${directCurrentRefId} に「${name}」を保存しました。` : `${directCurrentRefId} の登録名を削除しました。`) : '一時的に反映しましたが、ブラウザ保存には失敗しました。',
+      ok ? 'ok' : 'ng'
+    );
+  }
+
+  function switchTab(tabName) {
+    const isWeekly = tabName === 'weekly';
+    elements.weeklyPanel.hidden = !isWeekly;
+    elements.directPanel.hidden = isWeekly;
+    for (const button of elements.tabButtons) button.classList.toggle('active', button.dataset.tab === tabName);
+  }
+
+  function bindEvents() {
+    for (const button of elements.tabButtons) {
+      button.addEventListener('click', () => switchTab(button.dataset.tab));
+    }
+
+    elements.weeklyBaseId.addEventListener('change', () => {
+      setMessage(elements.weeklySideMsg, '');
+      setMessage(elements.weeklyNameMsg, '');
+      updateWeeklyView();
+    });
+    elements.weeklyWeek.addEventListener('change', () => {
+      setMessage(elements.weeklySideMsg, '');
+      updateWeeklyView();
+    });
+    elements.weeklySaveName.addEventListener('click', saveWeeklyName);
+    elements.weeklyNameInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        saveWeeklyName();
+      }
+    });
+    elements.weeklyCopyAll.addEventListener('click', async () => {
+      try {
+        await copyText(copyTextBody(data.weeklyRecords));
+        setMessage(elements.weeklyCopyMsg, '登録済み一覧をコピーしました。', 'ok');
+      } catch (error) {
+        elements.weeklyCopyArea.focus();
+        elements.weeklyCopyArea.select();
+        setMessage(elements.weeklyCopyMsg, error.message, 'ng');
+      }
+    });
+    elements.weeklyCopyCurrent.addEventListener('click', async () => {
+      const id = String(weeklyActualId(selectedWeeklyBaseId(), selectedWeeklyWeek()));
+      try {
+        await copyText(id);
+        setMessage(elements.weeklySideMsg, `現在のID ${id} をコピーしました。`, 'ok');
+      } catch (error) {
+        setMessage(elements.weeklySideMsg, error.message, 'ng');
+      }
+    });
+
+    elements.directApply.addEventListener('click', applyDirectRef);
+    elements.directRefInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applyDirectRef();
+      }
+    });
+    for (const button of elements.directStepButtons) {
+      button.addEventListener('click', () => stepDirectRef(Number(button.dataset.delta)));
+    }
+    elements.directSaveName.addEventListener('click', saveDirectName);
+    elements.directNameInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        saveDirectName();
+      }
+    });
+    elements.directCopyAll.addEventListener('click', async () => {
+      try {
+        await copyText(copyTextBody(data.directRefRecords));
+        setMessage(elements.directCopyMsg, '登録済みref一覧をコピーしました。', 'ok');
+      } catch (error) {
+        elements.directCopyArea.focus();
+        elements.directCopyArea.select();
+        setMessage(elements.directCopyMsg, error.message, 'ng');
+      }
+    });
+    elements.directCopyCurrent.addEventListener('click', async () => {
+      if (!Number.isSafeInteger(directCurrentRefId) || directCurrentRefId <= 0) {
+        setMessage(elements.directSideMsg, '先に有効なref IDを表示してください。', 'ng');
+        return;
+      }
+      try {
+        await copyText(String(directCurrentRefId));
+        setMessage(elements.directSideMsg, `現在のref ID ${directCurrentRefId} をコピーしました。`, 'ok');
+      } catch (error) {
+        setMessage(elements.directSideMsg, error.message, 'ng');
+      }
+    });
+  }
+
+  data = loadData();
+  renderWeeklyWeekSelect();
+  renderWeeklyBaseSelect(CONFIG.start);
+  renderWeeklyList();
+  renderDirectList();
+  updateWeeklyView();
+  updateDirectView();
+  bindEvents();
 })();
 </script>
 </body>

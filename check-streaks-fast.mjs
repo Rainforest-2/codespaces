@@ -1,29 +1,43 @@
 import { chromium } from "playwright";
-import { appendFile } from "node:fs/promises";
+import { appendFile, readFile } from "node:fs/promises";
 
-const urls = process.argv.slice(2);
+const inputUrls = process.argv.slice(2);
 
-if (urls.length === 0) {
-  console.error('Usage: node check-streaks-fast.mjs "<url1>" "<url2>" ...');
-  process.exit(1);
-}
-
-const TIMEOUT_MS = Number(process.env.TIMEOUT_MS || 5000);
-const CONCURRENCY = Number(process.env.CONCURRENCY || 3);
-const RESULT_FILE = process.env.RESULT_FILE || "result.txt";
-const RESULT_FALSE_FILE = process.env.RESULT_FALSE_FILE || "result-false.txt";
+const TIMEOUT_MS = Number(process.env.TIMEOUT_MS || 3000);
+const CONCURRENCY = Number(process.env.CONCURRENCY || 5);
+const RESULT_FILE = process.env.RESULT_FILE || "heads-true.txt";
+const RESULT_FALSE_FILE = process.env.RESULT_FALSE_FILE || "heads-false.txt";
 const DEBUG = process.env.DEBUG === "1";
 
 const ERROR_RE =
-  /見つかりません|存在しません|動画がありません|動画が存在しません|再生できません|視聴できません|権限|認証|期限切れ|期限|エラー|not found|not exist|unavailable|forbidden|unauthorized|permission|expired|invalid|error/i;
+  /対象が存在しません|対象がありません|存在しません|見つかりません|動画がありません|動画が存在しません|再生できません|視聴できません|権限|認証|期限切れ|期限|エラー|not found|not exist|unavailable|forbidden|unauthorized|permission|expired|invalid|error/i;
 
 function compact(s, n = 180) {
   return String(s || "").replace(/\s+/g, " ").trim().slice(0, n);
 }
 
-async function writeResult(url, exists) {
-  const file = exists ? RESULT_FILE : RESULT_FALSE_FILE;
-  await appendFile(file, `${url}\n`, "utf8");
+async function readSearchedUrls() {
+  const set = new Set();
+
+  for (const file of [RESULT_FILE, RESULT_FALSE_FILE]) {
+    try {
+      const text = await readFile(file, "utf8");
+      for (const line of text.split(/\r?\n/)) {
+        const url = line.trim().split(/\s+/)[0];
+        if (url) set.add(url);
+      }
+    } catch {}
+  }
+
+  return set;
+}
+
+async function writeResult(url, verdict) {
+  if (verdict === "EXISTS") {
+    await appendFile(RESULT_FILE, `${url}\n`, "utf8");
+  } else if (verdict === "NOT_FOUND") {
+    await appendFile(RESULT_FALSE_FILE, `${url}\n`, "utf8");
+  }
 }
 
 async function getDomSignals(page) {
@@ -34,7 +48,6 @@ async function getDomSignals(page) {
     try {
       const data = await frame.evaluate(() => {
         const bodyText = document.body?.innerText || "";
-
         const videos = [...document.querySelectorAll("video")].map(v => ({
           src: v.getAttribute("src") || "",
           currentSrc: v.currentSrc || "",
@@ -44,7 +57,6 @@ async function getDomSignals(page) {
           errorCode: v.error ? v.error.code : null,
           sourceCount: v.querySelectorAll("source").length,
         }));
-
         return { bodyText, videos };
       });
 
@@ -89,11 +101,12 @@ async function checkOne(context, url) {
       const status = res.status();
       const headers = res.headers();
       const contentType = headers["content-type"] || "";
+      const resUrl = res.url();
 
       if (
         status >= 400 &&
         ["xhr", "fetch", "document"].includes(type) &&
-        res.url().includes("players.streaks.jp")
+        resUrl.includes("players.streaks.jp")
       ) {
         badPlayerResponse = true;
       }
@@ -102,6 +115,7 @@ async function checkOne(context, url) {
         [200, 206].includes(status) &&
         (
           type === "media" ||
+          /\.m3u8(\?|$)|\.ts(\?|$)|\.mp4(\?|$)/i.test(resUrl) ||
           /video|audio|mpegurl|mp2t|mp4|octet-stream/i.test(contentType)
         )
       ) {
@@ -142,40 +156,36 @@ async function checkOne(context, url) {
         result.verdict = "NOT_FOUND";
         result.reason = "error text detected";
         result.debug = sig;
-        break;
+        return result;
       }
 
       if (badPlayerResponse) {
         result.verdict = "NOT_FOUND";
         result.reason = "bad player response";
         result.debug = sig;
-        break;
+        return result;
       }
 
       if (mediaOk) {
         result.verdict = "EXISTS";
         result.reason = "media response detected";
         result.debug = sig;
-        break;
+        return result;
       }
 
       if (sig.hasPlayableVideo) {
         result.verdict = "EXISTS";
         result.reason = "video metadata detected";
         result.debug = sig;
-        break;
+        return result;
       }
 
-      await page.waitForTimeout(150);
+      await page.waitForTimeout(80);
     }
 
-    if (result.verdict === "UNKNOWN") {
-      const sig = await getDomSignals(page);
-      result.debug = sig;
-      result.reason = `timeout ${TIMEOUT_MS}ms`;
-    }
-
-    result.title = await page.title().catch(() => "");
+    const sig = await getDomSignals(page);
+    result.debug = sig;
+    result.reason = `timeout ${TIMEOUT_MS}ms`;
     return result;
   } catch (e) {
     result.verdict = "UNKNOWN";
@@ -199,6 +209,33 @@ async function runPool(items, workerCount, fn) {
   await Promise.all(
     Array.from({ length: Math.min(workerCount, items.length) }, worker)
   );
+}
+
+if (inputUrls.length === 0) {
+  console.error('Usage: node check-streaks-fast.mjs "<url1>" "<url2>" ...');
+  process.exit(1);
+}
+
+const searched = await readSearchedUrls();
+const seenNow = new Set();
+
+const urls = inputUrls.filter(url => {
+  if (searched.has(url)) {
+    console.log(`${url} skipped`);
+    return false;
+  }
+
+  if (seenNow.has(url)) {
+    console.log(`${url} skipped`);
+    return false;
+  }
+
+  seenNow.add(url);
+  return true;
+});
+
+if (urls.length === 0) {
+  process.exit(0);
 }
 
 const browser = await chromium.launch({
@@ -250,10 +287,10 @@ await context.route("**/*", async route => {
 
 await runPool(urls, CONCURRENCY, async url => {
   const r = await checkOne(context, url);
+
+  await writeResult(r.url, r.verdict);
+
   const exists = r.verdict === "EXISTS";
-
-  await writeResult(r.url, exists);
-
   console.log(`${r.url} ${exists ? "true" : "false"}`);
 
   if (DEBUG) {
